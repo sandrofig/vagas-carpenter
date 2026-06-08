@@ -79,23 +79,15 @@
     </div>
 
     <script>
-        const apiTarget = 'https://seasonaljobs.dol.gov/api/jobs?search=Carpenter%20Helpers&sort=relevancy';
-        
-        // Usando o proxy com um parâmetro de data atual para forçar o AllOrigins a não usar cache quebrado
-        const proxyUrl = `https://api.allorigins.win/get?disableCache=true&url=${encodeURIComponent(apiTarget)}`;
+        // Sua URL da Cloudflare que está funcionando perfeitamente
+        const workerUrl = 'https://proxy-sazonal.figueredo-sandro.workers.dev/';
 
         async function carregarVagas() {
             try {
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('Erro na resposta do servidor proxy.');
+                const response = await fetch(workerUrl);
+                if (!response.ok) throw new Error('Erro na resposta do Worker.');
                 
-                const data = await response.json();
-                
-                if (!data.contents) {
-                    throw new Error('Conteúdo vazio retornado pelo proxy.');
-                }
-
-                const resultadoJson = JSON.parse(data.contents);
+                const resultadoJson = await response.json();
                 const listaVagas = resultadoJson.data;
                 
                 const container = document.getElementById('vagas-container');
@@ -132,14 +124,7 @@
             } catch (error) {
                 console.error('Erro detalhado:', error);
                 document.getElementById('vagas-container').innerHTML = `
-                    <div class="loading" style="color: #dc2626; text-align: left; background: #fee2e2; padding: 15px; border-radius: 6px;">
-                        <strong>Erro ao conectar com o servidor de vagas.</strong><br><br>
-                        Isso acontece porque o site do governo americano bloqueia acessos diretos de outros sites (CORS).<br><br>
-                        <strong>Como resolver temporariamente se persistir:</strong><br>
-                        1. Acesse o site <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">CORS Anywhere Demo</a>.<br>
-                        2. Clique no botão de autorização na página deles ("Request temporary access").<br>
-                        3. Volte aqui e atualize esta página.
-                    </div>
+                    <p class="loading" style="color: red;">Erro ao carregar as vagas em tempo real. Tente atualizar a página.</p>
                 `;
             }
         }
