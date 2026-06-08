@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vagas ao Vivo: Carpenter Helpers</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f0f2f5; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 { 
+            color: #1a365d; 
+            border-bottom: 2px solid #cbd5e1;
+            padding-bottom: 10px;
+        }
+        .contador {
+            font-weight: bold;
+            color: #4b5563;
+            margin-bottom: 20px;
+        }
+        .vaga-card { 
+            background: white; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            border-left: 5px solid #2b6cb0;
+        }
+        .titulo { 
+            font-size: 1.25em; 
+            font-weight: bold; 
+            color: #2b6cb0; 
+            margin-bottom: 5px;
+        }
+        .empresa { 
+            font-weight: 600;
+            color: #4a5568; 
+        }
+        .local {
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .detalhes { 
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.95em; 
+        }
+        .salario { 
+            color: #38a169; 
+            font-weight: bold; 
+        }
+        .loading { 
+            font-size: 1.2em; 
+            color: #4a5568; 
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Vagas ao Vivo: Carpenter Helpers (EUA)</h1>
+        <div id="contador-vagas" class="contador">Buscando vagas recentes...</div>
+        
+        <div id="vagas-container">
+            <p class="loading">Carregando painel de vagas...</p>
+        </div>
+    </div>
+
+    <script>
+        const apiTarget = 'https://seasonaljobs.dol.gov/api/jobs?search=Carpenter%20Helpers&sort=relevancy';
+        
+        // Usando o proxy com um parâmetro de data atual para forçar o AllOrigins a não usar cache quebrado
+        const proxyUrl = `https://api.allorigins.win/get?disableCache=true&url=${encodeURIComponent(apiTarget)}`;
+
+        async function carregarVagas() {
+            try {
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error('Erro na resposta do servidor proxy.');
+                
+                const data = await response.json();
+                
+                if (!data.contents) {
+                    throw new Error('Conteúdo vazio retornado pelo proxy.');
+                }
+
+                const resultadoJson = JSON.parse(data.contents);
+                const listaVagas = resultadoJson.data;
+                
+                const container = document.getElementById('vagas-container');
+                const contador = document.getElementById('contador-vagas');
+                
+                container.innerHTML = ''; 
+
+                if (!listaVagas || listaVagas.length === 0) {
+                    contador.innerText = "Nenhuma vaga encontrada para esta busca no momento.";
+                    container.innerHTML = '<p class="loading">Tente atualizar a página mais tarde.</p>';
+                    return;
+                }
+
+                contador.innerText = `${listaVagas.length} vagas encontradas ao vivo:`;
+
+                listaVagas.forEach(vaga => {
+                    const card = document.createElement('div');
+                    card.className = 'vaga-card';
+                    const salarioTexto = vaga.wage_range || vaga.wage_rate || 'Não informado';
+                    
+                    card.innerHTML = `
+                        <div class="titulo">${vaga.job_title}</div>
+                        <div class="empresa">${vaga.employer_name}</div>
+                        <div class="local">📍 ${vaga.location_city}, ${vaga.location_state}</div>
+                        <div class="detalhes">
+                            💵 <span class="salario">Salário: ${salarioTexto}</span><br>
+                            📅 <strong>Período:</strong> de ${vaga.job_start_date} até ${vaga.job_end_date}<br>
+                            💼 <strong>Caso/ID:</strong> ${vaga.case_number || 'N/A'}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Erro detalhado:', error);
+                document.getElementById('vagas-container').innerHTML = `
+                    <div class="loading" style="color: #dc2626; text-align: left; background: #fee2e2; padding: 15px; border-radius: 6px;">
+                        <strong>Erro ao conectar com o servidor de vagas.</strong><br><br>
+                        Isso acontece porque o site do governo americano bloqueia acessos diretos de outros sites (CORS).<br><br>
+                        <strong>Como resolver temporariamente se persistir:</strong><br>
+                        1. Acesse o site <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">CORS Anywhere Demo</a>.<br>
+                        2. Clique no botão de autorização na página deles ("Request temporary access").<br>
+                        3. Volte aqui e atualize esta página.
+                    </div>
+                `;
+            }
+        }
+
+        carregarVagas();
+    </script>
+</body>
+</html>
